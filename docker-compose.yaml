@@ -8,5 +8,15 @@ services:
       - backend
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+  gocker-client:
+    build: 
+      context: Gocker-Client
+      dockerfile: dev.Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Gocker-Client/src:/app/src
+    networks:
+      - backend
 networks:
   backend:
