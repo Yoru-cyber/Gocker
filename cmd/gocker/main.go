@@ -42,6 +42,15 @@ func main() {
 		}
 		json.NewEncoder(w).Encode(containers)
 	})
+	r.Get("/api/v1/containers/{id}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-type", "application/json")
+		var container_id = chi.URLParam(r, "id")
+		container, err := cli.ContainerInspect(ctx, container_id)
+		if err != nil {
+			panic(err)
+		}
+		json.NewEncoder(w).Encode(container)
+	})
 	http.ListenAndServe(":3000", r)
 	// containers, err := cli.ContainerList(ctx, containertypes.ListOptions{})
 	// if err != nil {

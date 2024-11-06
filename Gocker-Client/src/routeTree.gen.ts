@@ -13,6 +13,8 @@ import { createFileRoute } from "@tanstack/react-router";
 // Import Routes
 
 import { Route as rootRoute } from "./routes/__root";
+import { Route as ContainerIndexImport } from "./routes/container/index";
+import { Route as ContainerContainerIdImport } from "./routes/container/$containerId";
 
 // Create Virtual Routes
 
@@ -33,6 +35,18 @@ const IndexLazyRoute = IndexLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import("./routes/index.lazy").then((d) => d.Route));
 
+const ContainerIndexRoute = ContainerIndexImport.update({
+  id: "/container/",
+  path: "/container/",
+  getParentRoute: () => rootRoute,
+} as any);
+
+const ContainerContainerIdRoute = ContainerContainerIdImport.update({
+  id: "/container/$containerId",
+  path: "/container/$containerId",
+  getParentRoute: () => rootRoute,
+} as any);
+
 // Populate the FileRoutesByPath interface
 
 declare module "@tanstack/react-router" {
@@ -51,6 +65,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AboutLazyImport;
       parentRoute: typeof rootRoute;
     };
+    "/container/$containerId": {
+      id: "/container/$containerId";
+      path: "/container/$containerId";
+      fullPath: "/container/$containerId";
+      preLoaderRoute: typeof ContainerContainerIdImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/container/": {
+      id: "/container/";
+      path: "/container";
+      fullPath: "/container";
+      preLoaderRoute: typeof ContainerIndexImport;
+      parentRoute: typeof rootRoute;
+    };
   }
 }
 
@@ -59,36 +87,46 @@ declare module "@tanstack/react-router" {
 export interface FileRoutesByFullPath {
   "/": typeof IndexLazyRoute;
   "/about": typeof AboutLazyRoute;
+  "/container/$containerId": typeof ContainerContainerIdRoute;
+  "/container": typeof ContainerIndexRoute;
 }
 
 export interface FileRoutesByTo {
   "/": typeof IndexLazyRoute;
   "/about": typeof AboutLazyRoute;
+  "/container/$containerId": typeof ContainerContainerIdRoute;
+  "/container": typeof ContainerIndexRoute;
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute;
   "/": typeof IndexLazyRoute;
   "/about": typeof AboutLazyRoute;
+  "/container/$containerId": typeof ContainerContainerIdRoute;
+  "/container/": typeof ContainerIndexRoute;
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/about";
+  fullPaths: "/" | "/about" | "/container/$containerId" | "/container";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/about";
-  id: "__root__" | "/" | "/about";
+  to: "/" | "/about" | "/container/$containerId" | "/container";
+  id: "__root__" | "/" | "/about" | "/container/$containerId" | "/container/";
   fileRoutesById: FileRoutesById;
 }
 
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute;
   AboutLazyRoute: typeof AboutLazyRoute;
+  ContainerContainerIdRoute: typeof ContainerContainerIdRoute;
+  ContainerIndexRoute: typeof ContainerIndexRoute;
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   AboutLazyRoute: AboutLazyRoute,
+  ContainerContainerIdRoute: ContainerContainerIdRoute,
+  ContainerIndexRoute: ContainerIndexRoute,
 };
 
 export const routeTree = rootRoute
@@ -102,7 +140,9 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/about"
+        "/about",
+        "/container/$containerId",
+        "/container/"
       ]
     },
     "/": {
@@ -110,6 +150,12 @@ export const routeTree = rootRoute
     },
     "/about": {
       "filePath": "about.lazy.tsx"
+    },
+    "/container/$containerId": {
+      "filePath": "container/$containerId.tsx"
+    },
+    "/container/": {
+      "filePath": "container/index.tsx"
     }
   }
 }
