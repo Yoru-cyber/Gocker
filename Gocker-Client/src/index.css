@@ -9,12 +9,15 @@
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #121212;
-  --primary: #b798f7;
+  --primary: #D0BCFF;
   --primary-variant-1: #efe6fd;
   --primary-variant-2: #d4c1f9;
   --primary-variant-3: #4a20c7;
-  --secondary: #db62c3;
-  --complementary-dark: #1f1f1f;
+  --secondary: #D0BCFF;
+  --tertiary: #EFB8C8;
+  --complementary-dark: #211F26;
+  --outline: #938F99;
+  --outline-variant: #49454F;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,6 +30,9 @@ a {
 }
 a:hover {
   color: var(--primary);
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 h1 {
   font-size: 3.2em;
