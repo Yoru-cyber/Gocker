@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
-	"net/http"
-
 	"encoding/json"
+	"net/http"
 
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -13,14 +12,51 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func main() {
-	ctx := context.Background()
-	//Client to interact with Docker api
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+type DockerHandler struct {
+	DockerClient *client.Client
+}
+
+func (d DockerHandler) ListContainers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/json")
+	containers, err := d.DockerClient.ContainerList(context.Background(), containertypes.ListOptions{})
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
 	}
-	defer cli.Close()
+	json.NewEncoder(w).Encode(containers)
+}
+func (d DockerHandler) GetContainerById(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/json")
+	containerID := chi.URLParam(r, "id")
+	container, err := d.DockerClient.ContainerInspect(context.Background(), containerID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(container)
+}
+func DockerRoutes(cli *client.Client) chi.Router {
+	r := chi.NewRouter()
+	DockerHandler := DockerHandler{DockerClient: cli}
+	r.Get("/", DockerHandler.ListContainers)
+	r.Get("/{id}", DockerHandler.GetContainerById)
+	return r
+}
+
+// Server is the main server struct
+type Server struct {
+	Router       *chi.Mux
+	DockerClient *client.Client
+}
+
+func NewServer(dockerClient *client.Client) *Server {
+	return &Server{
+		DockerClient: dockerClient,
+	}
+}
+
+func (s *Server) Start() error {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
@@ -29,44 +65,24 @@ func main() {
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
+		MaxAge:           300,
 	}))
 	r.Get("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World!"))
 	})
-	r.Get("/api/v1/containers/all", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-type", "application/json")
-		containers, err := cli.ContainerList(ctx, containertypes.ListOptions{})
-		if err != nil {
-			panic(err)
-		}
-		json.NewEncoder(w).Encode(containers)
-	})
-	r.Get("/api/v1/containers/{id}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-type", "application/json")
-		var container_id = chi.URLParam(r, "id")
-		container, err := cli.ContainerInspect(ctx, container_id)
-		if err != nil {
-			panic(err)
-		}
-		json.NewEncoder(w).Encode(container)
-	})
-	http.ListenAndServe(":3000", r)
-	// containers, err := cli.ContainerList(ctx, containertypes.ListOptions{})
-	// if err != nil {
-	// 	panic(err)
-	// }
 
-	// jsonBytes, err := json.Marshal(containers)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(string(jsonBytes))
-	// for _, ctr := range containers {
+	r.Mount("/api/v1/containers", DockerRoutes(s.DockerClient))
+	return http.ListenAndServe(":3000", r)
+}
 
-	// }
-
-	//	for _, container := range containers {
-	//		fmt.Println(container.ID)
-	//	}
+func main() {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+	defer cli.Close()
+	server := NewServer(cli)
+	if err := server.Start(); err != nil {
+		panic(err)
+	}
 }
